@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>The Reporter Desk</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #main-menu {
+            display: none;
+            position: absolute;
+            left: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: left;
+        }
+
+        .menu-button {
+            background: rgba(52, 152, 219, 0.1);
+            border: 2px solid #3498db;
+            color: white;
+            padding: 15px 30px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 250px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            display: block;
+        }
+
+        .menu-button:hover {
+            background: rgba(52, 152, 219, 0.3);
+            transform: translateX(10px);
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .menu-button::after {
+            content: '→';
+            position: absolute;
+            right: 20px;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .menu-button:hover::after {
+            opacity: 1;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 40px;
+            color: #3498db;
+            text-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .office-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        #game-intro {
+            display: none;
+            text-align: center;
+            max-width: 800px;
+            padding: 40px;
+            background: rgba(26, 26, 46, 0.9);
+            border-radius: 15px;
+            border: 2px solid #3498db;
+        }
+
+        #game-intro p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        #start-typing {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #start-typing:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        #game-screen {
+            display: none;
+            width: 100%;
+            max-width: 1000px;
+            padding: 30px;
+            position: relative;
+        }
+
+        #debug-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        #debug-button:hover {
+            background: rgba(231, 76, 60, 0.4);
+        }
+
+        #timer {
+            font-size: 24px;
+            color: #3498db;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        #article-container {
+            background: rgba(26, 26, 46, 0.9);
+            border: 2px solid #3498db;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #target-text {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #888;
+            white-space: pre-wrap;
+        }
+
+        #target-text span {
+            transition: color 0.2s ease;
+        }
+
+        #target-text span.correct {
+            color: #2ecc71;
+        }
+
+        #target-text span.incorrect {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        #target-text span.current {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 2px solid #3498db;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { border-color: transparent; }
+        }
+
+        #input-field {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #progress-bar {
+            height: 4px;
+            background: #2ecc71;
+            width: 0%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            transition: width 0.3s ease;
+        }
+
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        #end-screen {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid #3498db;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            z-index: 1000;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        #end-screen h2 {
+            color: #3498db;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        #end-screen .final-stats {
+            margin: 30px 0;
+            font-size: 1.2em;
+        }
+
+        #end-screen .stat-label {
+            color: #888;
+            margin-right: 10px;
+        }
+
+        #end-screen .final-stat-value {
+            color: #2ecc71;
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        #play-again {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        #play-again:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        #story-scene {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.98);
+            z-index: 2000;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .story-content {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            margin: 5vh auto;
+            padding: 20px;
+        }
+
+        .character-image {
+            flex: 1;
+            background: url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=crop&w=634&q=80');
+            background-size: cover;
+            background-position: center;
+            border-radius: 15px;
+            margin-right: 40px;
+            box-shadow: 0 0 30px rgba(52, 152, 219, 0.3);
+            animation: slideIn 0.8s ease;
+        }
+
+        .dialogue-box {
+            flex: 1;
+            background: rgba(52, 152, 219, 0.1);
+            border: 2px solid #3498db;
+            border-radius: 15px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dialogue-text {
+            font-size: 20px;
+            line-height: 1.8;
+            opacity: 0;
+            animation: typeWriter 2s ease forwards;
+        }
+
+        .dialogue-text p {
+            margin-bottom: 20px;
+        }
+
+        .continue-button {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .continue-button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes typeWriter {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="office-bg"></div>
+    
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <h2>Loading...</h2>
+    </div>
+
+    <div id="main-menu">
+        <h1>The Reporter Desk</h1>
+        <button class="menu-button" onclick="startGame()">Start Game</button>
+        <button class="menu-button" onclick="showOptions()">Options</button>
+        <button class="menu-button" onclick="window.close()">Exit</button>
+    </div>
+
+    <div id="game-intro">
+        <h2>Welcome to the Newsroom!</h2>
+        <p>As a talented reporter at The Daily Chronicle, your task is to write compelling articles under tight deadlines. Your editor has just assigned you an important story that needs to be published today.</p>
+        <p>Type the article exactly as it appears on your screen. Watch out for accuracy - every detail matters in journalism!</p>
+        <button id="start-typing" onclick="beginTyping()">Begin Writing</button>
+    </div>
+
+    <div id="game-screen">
+        <button id="debug-button" onclick="autoCompleteText()">Skip Text (Debug)</button>
+        <div id="timer">Time: <span id="time-left">120</span>s</div>
+        <div id="article-container">
+            <div id="target-text"></div>
+            <input type="text" id="input-field" autocomplete="off">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="stats">
+            <div class="stat">
+                WPM: <span class="stat-value" id="wpm">0</span>
+            </div>
+            <div class="stat">
+                Accuracy: <span class="stat-value" id="accuracy">100%</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="end-screen">
+        <h2>Excellent Work!</h2>
+        <p>You've completed the article with impressive results!</p>
+        <div class="final-stats">
+            <div>
+                <span class="stat-label">Words Per Minute:</span>
+                <span class="final-stat-value" id="final-wpm">0</span>
+            </div>
+            <div>
+                <span class="stat-label">Accuracy:</span>
+                <span class="final-stat-value" id="final-accuracy">100%</span>
+            </div>
+            <div>
+                <span class="stat-label">Time Used:</span>
+                <span class="final-stat-value" id="final-time">0s</span>
+            </div>
+        </div>
+        <button id="play-again" onclick="restartGame()">Play Again</button>
+    </div>
+
+    <div id="story-scene">
+        <div class="story-content">
+            <div class="character-image"></div>
+            <div class="dialogue-box">
+                <div class="dialogue-text">
+                    <p>*Wipes sweat from forehead*</p>
+                    <p>Phew! I managed to finish this article just in time! The deadline was tight, but I made it through.</p>
+                    <p>You know, being a reporter isn't always easy, but moments like these make it all worth it. The story about our local community coming together for the festival... I think it's going to bring a smile to many faces.</p>
+                    <p>Now, let's see what other stories await...</p>
+                </div>
+                <button class="continue-button" onclick="returnToMenu()">Continue →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'block';
+            }, 2000);
+        }
+
+        function startGame() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-intro').style.display = 'block';
+        }
+
+        const sampleText = "Welcome to The Daily News Today we have a beautiful sunny day in our city The local park is getting ready for a fun summer festival There will be lots of music and food for everyone to enjoy The mayor wants our community to have fun together Remember to bring all your friends";
+        let currentIndex = 0;
+        let startTime;
+        let timerInterval;
+        let mistakes = 0;
+        let totalAttempts = 0;
+
+        function beginTyping() {
+            document.getElementById('game-intro').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            
+            const targetText = document.getElementById('target-text');
+            targetText.innerHTML = sampleText.split('').map(char => `<span>${char}</span>`).join('');
+            
+            document.getElementById('input-field').focus();
+            startTimer();
+            setupTypingGame();
+        }
+
+        function startTimer() {
+            let timeLeft = 120;
+            startTime = Date.now();
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('time-left').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function setupTypingGame() {
+            const input = document.getElementById('input-field');
+            const spans = document.getElementById('target-text').getElementsByTagName('span');
+            
+            spans[0].classList.add('current');
+            
+            input.addEventListener('input', (e) => {
+                const typedChar = e.target.value;
+                e.target.value = '';
+                
+                if (typedChar === 'Backspace' || typedChar === '') {
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        const currentSpan = spans[currentIndex];
+                        const nextSpan = spans[currentIndex + 1];
+                        
+                        currentSpan.classList.remove('correct', 'incorrect');
+                        currentSpan.classList.add('current');
+                        if (nextSpan) {
+                            nextSpan.classList.remove('current');
+                        }
+                        
+                        if (currentSpan.classList.contains('incorrect')) {
+                            mistakes--;
+                            totalAttempts--;
+                        }
+                        
+                        updateStats();
+                        updateProgressBar();
+                    }
+                    return;
+                }
+                
+                if (currentIndex >= sampleText.length) return;
+                
+                const currentChar = sampleText[currentIndex];
+                const currentSpan = spans[currentIndex];
+                
+                totalAttempts++;
+                
+                if (typedChar.toLowerCase() === currentChar.toLowerCase()) {
+                    currentSpan.classList.remove('current');
+                    currentSpan.classList.add('correct');
+                    
+                    if (currentIndex < sampleText.length - 1) {
+                        spans[currentIndex + 1].classList.add('current');
+                    }
+                } else {
+                    currentSpan.classList.remove('current');
+                    currentSpan.classList.add('incorrect');
+                    mistakes++;
+                    
+                    if (currentIndex < sampleText.length - 1) {
+                        spans[currentIndex + 1].classList.add('current');
+                    }
+                }
+                
+                currentIndex++;
+                updateStats();
+                updateProgressBar();
+                
+                if (currentIndex >= sampleText.length) {
+                    endGame();
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace') {
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        const currentSpan = spans[currentIndex];
+                        const nextSpan = spans[currentIndex + 1];
+                        
+                        currentSpan.classList.remove('correct', 'incorrect');
+                        currentSpan.classList.add('current');
+                        if (nextSpan) {
+                            nextSpan.classList.remove('current');
+                        }
+                        
+                        if (currentSpan.classList.contains('incorrect')) {
+                            mistakes--;
+                            totalAttempts--;
+                        }
+                        
+                        updateStats();
+                        updateProgressBar();
+                    }
+                    e.preventDefault();
+                }
+            });
+        }
+
+        function updateStats() {
+            const timeElapsed = (Date.now() - startTime) / 1000 / 60; // in minutes
+            const wordsTyped = currentIndex / 5; // assuming average word length of 5 characters
+            const wpm = Math.round(wordsTyped / timeElapsed);
+            const accuracy = totalAttempts > 0 ? Math.round(((totalAttempts - mistakes) / totalAttempts) * 100) : 100;
+            
+            document.getElementById('wpm').textContent = wpm;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+        }
+
+        function updateProgressBar() {
+            const progress = (currentIndex / sampleText.length) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            document.getElementById('input-field').disabled = true;
+            
+            const timeElapsed = Math.round((Date.now() - startTime) / 1000);
+            const finalWpm = document.getElementById('wpm').textContent;
+            const finalAccuracy = document.getElementById('accuracy').textContent;
+            
+            document.getElementById('final-wpm').textContent = finalWpm;
+            document.getElementById('final-accuracy').textContent = finalAccuracy;
+            document.getElementById('final-time').textContent = timeElapsed + 's';
+            
+            document.getElementById('end-screen').style.display = 'block';
+        }
+
+        function restartGame() {
+            document.getElementById('end-screen').style.display = 'none';
+            showStoryScene();
+        }
+
+        function showOptions() {
+            console.log('Showing options...');
+        }
+
+        function showStoryScene() {
+            document.getElementById('end-screen').style.display = 'none';
+            document.getElementById('story-scene').style.display = 'block';
+        }
+
+        function returnToMenu() {
+            document.getElementById('story-scene').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'block';
+            
+            // Reset all game variables
+            currentIndex = 0;
+            mistakes = 0;
+            totalAttempts = 0;
+            document.getElementById('wpm').textContent = '0';
+            document.getElementById('accuracy').textContent = '100%';
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('input-field').disabled = false;
+        }
+
+        function autoCompleteText() {
+            const spans = document.getElementById('target-text').getElementsByTagName('span');
+            
+            // Simulate correct typing for each character
+            for (let i = currentIndex; i < sampleText.length; i++) {
+                const currentSpan = spans[i];
+                currentSpan.classList.remove('current', 'incorrect');
+                currentSpan.classList.add('correct');
+            }
+            
+            // Update progress and stats
+            currentIndex = sampleText.length;
+            totalAttempts = sampleText.length;
+            mistakes = 0;
+            
+            updateStats();
+            updateProgressBar();
+            endGame();
+        }
+    </script>
+</body>
+</html> 
